@@ -22,38 +22,30 @@ namespace ExcelImport.Controllers
                 return BadRequest("File is empty");
 
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
             using var stream = new MemoryStream();
             await file.CopyToAsync(stream);
             using var package = new ExcelPackage(stream);
-
             var worksheet = package.Workbook.Worksheets.First();
             var rowCount = worksheet.Dimension?.Rows ?? 0;  // Null check for Dimension
-
             for (int row = 2; row <= rowCount; row++)  // Assuming the first row is the header
             {
                 var idValue = worksheet.Cells[row, 1]?.Value?.ToString()?.Trim();
                 var nameValue = worksheet.Cells[row, 2]?.Value?.ToString()?.Trim();
                 var marksValue = worksheet.Cells[row, 3]?.Value?.ToString()?.Trim();
-
                 // Check if the entire row is empty (no data in any cell)
                 if (string.IsNullOrWhiteSpace(idValue) && string.IsNullOrWhiteSpace(nameValue) && string.IsNullOrWhiteSpace(marksValue))
                 {
                     continue;  // Skip this empty row
                 }
-
                 if (string.IsNullOrWhiteSpace(idValue) || string.IsNullOrWhiteSpace(nameValue) || string.IsNullOrWhiteSpace(marksValue))
                 {
                     return BadRequest($"Invalid data at row {row}");
                 }
-
                 if (!int.TryParse(idValue, out var id) || !int.TryParse(marksValue, out var marks))
                 {
                     return BadRequest($"Invalid data at row {row}: ID or Marks are not valid integers.");
                 }
-
                 var student = await _context.students.FindAsync(id);
-
                 if (student != null)
                 {
                     // Updating existing student record, do not modify Id.
@@ -72,7 +64,6 @@ namespace ExcelImport.Controllers
                     _context.students.Add(student);
                 }
             }
-
             await _context.SaveChangesAsync();
             return Ok("Data imported successfully");
         }
@@ -82,19 +73,15 @@ namespace ExcelImport.Controllers
         public IActionResult ExportDataToExcel()
         {
             var employees = _context.students.ToList(); // Fetch data from DB
-            
             // Set the license context for EPPlus
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;  // Add this line
-
             using (ExcelPackage package = new ExcelPackage())
             {
                 var worksheet = package.Workbook.Worksheets.Add("students");
-
                 // Add headers
                 worksheet.Cells[1, 1].Value = "Id";
                 worksheet.Cells[1, 2].Value = "Name";
                 worksheet.Cells[1, 3].Value = "Marks";
-
                 var students = _context.students.ToList();
                 if (students == null || !students.Any())
                 {
