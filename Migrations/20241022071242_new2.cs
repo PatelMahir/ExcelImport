@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
-
 namespace ExcelImport.Migrations
 {
     /// <inheritdoc />
